@@ -1,5 +1,8 @@
 # Gemini Glam - Virtual Makeup Try-On
 
+> [!IMPORTANT]
+> **DEMO ONLY**: This application is provided for demonstration purposes only and is not intended for production use. It showcases the capabilities of Generative AI for virtual try-on experiences.
+
 Gemini Glam is an AI-powered virtual makeup try-on application built with **React**, **Vite**, and **Google's Gemini 2.5 Flash** model. It allows users to upload a photo and realisticly apply lipstick, eyeshadow, and blush shades while preserving natural facial features and lighting.
 
 ## Features
