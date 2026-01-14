@@ -4,13 +4,36 @@ export interface Color {
   hex: string;
 }
 
+export type Finish = 'matte' | 'shimmer' | 'satin' | 'gloss' | 'sheer' | 'metallic' | 'holographic';
+
+export interface Shade extends Color {
+  id: string;
+  finish?: Finish;
+}
+
+export interface Product {
+  id: string;
+  name: string;
+  type: 'lipstick' | 'blush' | 'eyeshadow';
+  description?: string;
+  shades: Shade[];
+}
+
+export interface Brand {
+  id: string;
+  name: string;
+  description?: string;
+  products: Product[];
+}
+
 export interface MakeupOptions {
-  lipstick: Color | null;
-  eyeshadow: Color | null;
-  blush: Color | null;
+  lipstick: Shade | null;
+  eyeshadow: Shade | null;
+  blush: Shade | null;
 }
 
 export interface MakeupSelection {
   category: keyof MakeupOptions;
-  color: Color;
+  shade: Shade;
+  product?: Product;
 }

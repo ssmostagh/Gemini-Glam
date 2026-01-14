@@ -25,30 +25,68 @@ const App: React.FC = () => {
     return 0.2126 * r + 0.7152 * g + 0.0722 * b;
   };
 
+  const getFinishDescription = (finish?: string, category?: string) => {
+    if (!finish) return '';
+
+    switch (finish) {
+      case 'matte':
+        return 'with a completely flat, velvet matte finish. There should be absolutely no shine or gloss. The texture should look like pressed powder or liquid matte';
+      case 'gloss':
+        return 'with a high-shine, ultra-glossy finish. It should look wet, glassy, and highly reflective, imitating a thick layer of lip gloss';
+      case 'satin':
+        return 'with a rich satin finish. It should have a soft, creamy sheen that looks hydrated but not oily';
+      case 'shimmer':
+        return 'with a soft shimmer finish. It should have fine, subtle light-reflecting particles';
+      case 'metallic':
+        if (category === 'eyeshadow') {
+          return 'with a faint, scattered metallic sparkle. It should be a subtle wash of shimmer, NOT a heavy foil';
+        }
+        return 'with a bold metallic finish. It should look like molten metal with high-intensity reflection';
+      case 'sheer':
+        if (category === 'blush') {
+          return 'with a watercolor glaze finish. It should look like a barely-there, translucent stain that mimics a natural flush, NOT an oily gloss';
+        }
+        return 'with a sheer, translucent finish. The skin texture should remain visible underneath';
+      case 'holographic':
+        return 'with a faint, scattered holographic sparkle. It should be a subtle topper strictly on the center of the mobile eyelid, adding dimension without opaque color';
+      default:
+        return '';
+    }
+  };
+
   const generatePrompt = useCallback((): string => {
     const parts: string[] = [];
+
     if (makeupOptions.lipstick) {
-      parts.push(`apply ${makeupOptions.lipstick.name} lipstick (hex color: ${makeupOptions.lipstick.hex})`);
+      const finishDesc = getFinishDescription(makeupOptions.lipstick.finish, 'lipstick');
+      parts.push(`apply ${makeupOptions.lipstick.name} lipstick (hex color: ${makeupOptions.lipstick.hex}) ${finishDesc}. Ensure the texture blends naturally with the lips`);
     }
+
     if (makeupOptions.eyeshadow) {
       const luminance = getLuminance(makeupOptions.eyeshadow.hex);
-      const isDark = luminance < 0.5; // Threshold for dark colors
+      // Treat darker colors or bold colors as requiring extreme sheerness to avoid "clown" look
+      const isDarkOrBold = luminance < 0.6;
+      const finishDesc = getFinishDescription(makeupOptions.eyeshadow.finish, 'eyeshadow');
 
-      if (isDark) {
-        parts.push(`apply a VERY sheer, highly transparent wash of ${makeupOptions.eyeshadow.name} eyeshadow (hex: ${makeupOptions.eyeshadow.hex}) on the mobile eyelid. It must be faint and subtle, avoiding high contrast`);
+      if (makeupOptions.eyeshadow.finish === 'holographic') {
+        parts.push(`apply a delicate, scattered dust of ${makeupOptions.eyeshadow.name} holographic sparkle (hex: ${makeupOptions.eyeshadow.hex}) ${finishDesc}. It must be transparent and subtle.`);
+      } else if (isDarkOrBold) {
+        parts.push(`apply a VERY sheer, highly transparent wash of ${makeupOptions.eyeshadow.name} eyeshadow (hex: ${makeupOptions.eyeshadow.hex}) on the mobile eyelid. ${finishDesc}. It must be a soft diffuse haze, faint and subtle, avoiding high contrast or opaque cover`);
       } else {
-        parts.push(`apply a soft, evenly blended ${makeupOptions.eyeshadow.name} eyeshadow on the mobile eyelid (hex: ${makeupOptions.eyeshadow.hex}). The color should be clearly visible but remain natural`);
+        parts.push(`apply a soft, evenly blended ${makeupOptions.eyeshadow.name} eyeshadow on the mobile eyelid (hex: ${makeupOptions.eyeshadow.hex}). ${finishDesc}. The color should be clearly visible but remain natural and blended`);
       }
     }
+
     if (makeupOptions.blush) {
-      parts.push(`apply ${makeupOptions.blush.name} blush (hex: ${makeupOptions.blush.hex}) to the apples of the cheeks, blending upwards towards the temples. The finish should be soft, diffuse, and mimic a natural flush`);
+      const finishDesc = getFinishDescription(makeupOptions.blush.finish, 'blush');
+      parts.push(`apply ${makeupOptions.blush.name} blush (hex: ${makeupOptions.blush.hex}) ${finishDesc} strictly to the upper cheekbones, blending softly towards the temples. CRITICAL: Application must be symmetrical and blended with a soft diffuse edge. Do NOT apply blush to the jawline, lower cheeks, or chin. The finish must assimilate with the skin texture, not sit on top like paint`);
     }
 
     if (parts.length === 0) {
-      return "A photorealistic portrait of a person. Subtly enhance the facial features, smooth the skin, and brighten the eyes for a natural look.";
+      return "A photorealistic portrait of a person. Subtly enhance the facial features and smooth the skin for a natural look. Maintain the subject's exact skin tone and complexion.";
     }
 
-    return `A photorealistic portrait of a person. ${parts.join(' and ')}. The makeup should look natural and realistic, with the color faithfully representing the provided hex code under the photo's lighting conditions. CRITICAL: Do NOT alter the subject's facial features, eye shape, or eye openness. Apply the makeup strictly on top of the existing features without changing their geometry or expression.`;
+    return `A photorealistic portrait of a person. ${parts.join(' and ')}. The makeup should look natural and realistic, with colors faithfully representing the provided hex codes. CRITICAL: Maintain the subject's exact skin tone and complexion. Do not lighten or alter the skin color or undertones. Do NOT alter the subject's facial features, eye shape, or eye openness. Apply the makeup strictly on top of the existing features without changing their geometry or expression.`;
   }, [makeupOptions]);
 
   const handleImageUpload = (base64Image: string) => {
@@ -121,7 +159,7 @@ const App: React.FC = () => {
 
   const handleMakeupChange = (selection: MakeupSelection) => {
     console.log('handleMakeupChange:', selection);
-    setMakeupOptions(prev => ({ ...prev, [selection.category]: selection.color }));
+    setMakeupOptions(prev => ({ ...prev, [selection.category]: selection.shade }));
   };
 
   const handleClearCategory = (category: keyof MakeupOptions) => {
